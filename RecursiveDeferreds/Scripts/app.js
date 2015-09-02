@@ -1,5 +1,4 @@
 $(function () {
-    debugger;
     var tree = new TreeStructures.TreeNode("root", [
         new TreeStructures.TreeNode("node1", [
             new TreeStructures.TreeNode("level11"),
@@ -9,11 +8,36 @@ $(function () {
         new TreeStructures.TreeNode("node2", [
             new TreeStructures.TreeNode("level21"),
             new TreeStructures.TreeNode("level22"),
-            new TreeStructures.TreeNode("level23"),
+            new TreeStructures.TreeNode("level23", [
+                new TreeStructures.TreeNode("level231"),
+                new TreeStructures.TreeNode("level232"),
+                new TreeStructures.TreeNode("level233"),
+            ])
         ]),
-        new TreeStructures.TreeNode("node3"),
+        new TreeStructures.TreeNode("node3")
     ]);
-    console.log(tree.item);
+    //console.log(tree.item);
+    var walker = new TreeStructures.AsyncTreeWalker();
+    walker.walk(tree, function (node) {
+        var dfd = $.Deferred();
+        window.setTimeout(function () {
+            console.log("Resolving: " + node.item);
+            dfd.resolve(node.item);
+        }, 2000 + Math.random() * 1000);
+        return dfd.promise();
+    }).then(function () {
+        var results = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            results[_i - 0] = arguments[_i];
+        }
+        console.log("Finish!");
+        console.log("Results: " + results);
+        for (var r in results) {
+            if (results.hasOwnProperty(r)) {
+                console.log(results[r]);
+            }
+        }
+    });
 });
 var TreeStructures;
 (function (TreeStructures) {
@@ -32,5 +56,36 @@ var TreeStructures;
         return TreeNode;
     })();
     TreeStructures.TreeNode = TreeNode;
+    var TreeWalker = (function () {
+        function TreeWalker() {
+        }
+        TreeWalker.prototype.walk = function (node, action) {
+            action(node);
+            for (var i in node.children) {
+                if (node.children.hasOwnProperty(i)) {
+                    this.walk(node.children[i], action);
+                }
+            }
+        };
+        return TreeWalker;
+    })();
+    TreeStructures.TreeWalker = TreeWalker;
+    var AsyncTreeWalker = (function () {
+        function AsyncTreeWalker() {
+        }
+        AsyncTreeWalker.prototype.walk = function (node, action) {
+            var dfd = $.Deferred();
+            var promises = [action(node)];
+            for (var i in node.children) {
+                if (node.children.hasOwnProperty(i)) {
+                    promises.push(this.walk(node.children[i], action));
+                }
+            }
+            //dfd.resolve(node.item);
+            return $.when.apply(null, promises);
+        };
+        return AsyncTreeWalker;
+    })();
+    TreeStructures.AsyncTreeWalker = AsyncTreeWalker;
 })(TreeStructures || (TreeStructures = {}));
 //# sourceMappingURL=app.js.map

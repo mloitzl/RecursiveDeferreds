@@ -1,6 +1,6 @@
 ﻿module TreeStructures {
     export class TreeNode<T> {
-        private children: TreeNode<T>[] = [];
+        public children: TreeNode<T>[] = [];
 
         public item: T;
 
@@ -14,8 +14,40 @@
         }
 
         public removeChild(node: TreeNode<T>) {
-            
+
 
         }
     }
+
+    export class TreeWalker<T> {
+
+        public walk(node: TreeNode<T>, action: (item: TreeNode<T>) => void) {
+            action(node);
+            for (var i in node.children) {
+                if (node.children.hasOwnProperty(i)) {
+                    this.walk(node.children[i], action);
+                }
+            }
+        }
+    }
+
+
+    export class AsyncTreeWalker<T> {
+
+        public walk(node: TreeNode<T>, action: (item: TreeNode<T>) => JQueryPromise<string>): JQueryPromise<string> {
+            var dfd = $.Deferred();
+            var promises = [action(node)];
+            
+            for (var i in node.children) {
+                if (node.children.hasOwnProperty(i)) {
+                   promises.push(this.walk(node.children[i], action));
+                }
+            }
+
+            //dfd.resolve(node.item);
+
+            return $.when.apply(null, promises);
+        }
+    }
+
 }
