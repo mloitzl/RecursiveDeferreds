@@ -16,7 +16,6 @@ $(function () {
         ]),
         new TreeStructures.TreeNode("node3")
     ]);
-    //console.log(tree.item);
     var walker = new TreeStructures.AsyncTreeWalker();
     walker.walk(tree, function (node) {
         var dfd = $.Deferred();
@@ -39,6 +38,15 @@ $(function () {
         }
     });
 });
+var Collections;
+(function (Collections) {
+    var Set = (function () {
+        function Set() {
+        }
+        return Set;
+    })();
+    Collections.Set = Set;
+})(Collections || (Collections = {}));
 var TreeStructures;
 (function (TreeStructures) {
     var TreeNode = (function () {
@@ -52,6 +60,12 @@ var TreeStructures;
             this.children.push(node);
         };
         TreeNode.prototype.removeChild = function (node) {
+            var index = this.children.indexOf(node);
+            if (index > -1) {
+                this.children.splice(index, 1);
+                return true;
+            }
+            return false;
         };
         return TreeNode;
     })();
@@ -74,14 +88,12 @@ var TreeStructures;
         function AsyncTreeWalker() {
         }
         AsyncTreeWalker.prototype.walk = function (node, action) {
-            var dfd = $.Deferred();
             var promises = [action(node)];
             for (var i in node.children) {
                 if (node.children.hasOwnProperty(i)) {
                     promises.push(this.walk(node.children[i], action));
                 }
             }
-            //dfd.resolve(node.item);
             return $.when.apply(null, promises);
         };
         return AsyncTreeWalker;

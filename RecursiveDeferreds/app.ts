@@ -21,10 +21,9 @@
             new TreeStructures.TreeNode("node3")
         ]);
 
-        //console.log(tree.item);
-
         var walker = new TreeStructures.AsyncTreeWalker();
         walker.walk(tree, (node) => {
+
             var dfd = $.Deferred();
 
             window.setTimeout(
@@ -34,6 +33,8 @@
                 }, 2000 + Math.random() * 1000);
 
             return dfd.promise();
+
+
         }).then((...results: any[]) => {
 
             console.log("Finish!");
