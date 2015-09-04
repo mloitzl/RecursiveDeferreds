@@ -39,6 +39,26 @@
 
     export class AsyncTreeWalker<T> {
 
+
+        public fill(node: TreeNode<T>, generatorAction: (item: TreeNode<T>) => JQueryPromise<string>): JQueryPromise<string> {
+            var dfd = $.Deferred();
+            var promises = [];
+
+            generatorAction(node).done(() => {
+                
+                for (var i in node.children) {
+                    if (node.children.hasOwnProperty(i)) {
+                        promises.push(this.fill(node.children[i], generatorAction));
+                    }
+                }
+                $.when.apply(null, promises).then(() => {
+                    dfd.resolve();
+                });
+            });
+
+            return dfd.promise();
+        }
+
         public walk(node: TreeNode<T>, action: (item: TreeNode<T>) => JQueryPromise<string>): JQueryPromise<string> {
            
             var promises = [action(node)];

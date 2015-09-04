@@ -16,28 +16,81 @@ $(function () {
         ]),
         new TreeStructures.TreeNode("node3")
     ]);
+    var treeEmpty = new TreeStructures.TreeNode("root", []);
+    var syncWalker = new TreeStructures.TreeWalker();
     var walker = new TreeStructures.AsyncTreeWalker();
-    walker.walk(tree, function (node) {
-        var dfd = $.Deferred();
-        window.setTimeout(function () {
-            console.log("Resolving: " + node.item);
-            dfd.resolve(node.item);
-        }, 2000 + Math.random() * 1000);
-        return dfd.promise();
-    }).then(function () {
-        var results = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            results[_i - 0] = arguments[_i];
-        }
-        console.log("Finish!");
-        console.log("Results: " + results);
-        for (var r in results) {
-            if (results.hasOwnProperty(r)) {
-                console.log(results[r]);
-            }
-        }
+    walker.fill(treeEmpty, function (node) {
+        TreeStructures.DummyDataProvider.instanceCounter++;
+        //return TreeStructures.DummyDataProvider.fillNode(node);
+        return TreeStructures.DummyDataProvider.fillNodeFromSource(node, tree);
+    }).done(function (result) {
+        syncWalker.walk(treeEmpty, function (node) { return console.log(node.item); });
     });
+    console.log("");
+    //walker.walk(tree, (node) => {
+    //    var dfd = $.Deferred();
+    //    window.setTimeout(
+    //        () => {
+    //            console.log("Resolving: " + node.item);
+    //            dfd.resolve(node.item);
+    //        }, 100 + Math.random() * 1000);
+    //    return dfd.promise();
+    //}).then((...results: any[]) => {
+    //    console.log("Finish!");
+    //    console.log("Results: " + results);
+    //    for (var r in results) {
+    //        if (results.hasOwnProperty(r)) {
+    //            console.log(results[r]);
+    //        }
+    //    }
+    //});
 });
+var TreeStructures;
+(function (TreeStructures) {
+    var DummyDataProvider = (function () {
+        function DummyDataProvider() {
+        }
+        DummyDataProvider.fillNode = function (node) {
+            var dfd = $.Deferred();
+            if (DummyDataProvider.instanceCounter < 4) {
+                window.setTimeout(function () {
+                    for (var i = 0; i < 3; i++) {
+                        var childNode = new TreeStructures.TreeNode(node.item + "/" + DummyDataProvider.instanceCounter);
+                        node.addChild(childNode);
+                    }
+                    console.log("Resolving node: " + node.item);
+                    dfd.resolve(node.item);
+                }, 500 + Math.random() * 1000);
+            }
+            else {
+                console.log("Resolving finale node: " + node.item);
+                dfd.resolve(node.item);
+            }
+            return dfd.promise();
+        };
+        DummyDataProvider.fillNodeFromSource = function (node, source) {
+            var _this = this;
+            var dfd = $.Deferred();
+            var promises = [];
+            window.setTimeout(function () {
+                node.item = source.item;
+                for (var sourceNode in source.children) {
+                    var childNode = new TreeStructures.TreeNode(source.children[sourceNode].item);
+                    node.addChild(childNode);
+                    promises.push(_this.fillNodeFromSource(childNode, source.children[sourceNode]));
+                }
+                $.when.apply(null, promises).then(function () {
+                    console.log("Resolving: " + node.item);
+                    dfd.resolve(node.item);
+                });
+            }, 500 + Math.random() * 1000);
+            return dfd.promise();
+        };
+        DummyDataProvider.instanceCounter = 0;
+        return DummyDataProvider;
+    })();
+    TreeStructures.DummyDataProvider = DummyDataProvider;
+})(TreeStructures || (TreeStructures = {}));
 var Collections;
 (function (Collections) {
     var Set = (function () {
@@ -87,6 +140,22 @@ var TreeStructures;
     var AsyncTreeWalker = (function () {
         function AsyncTreeWalker() {
         }
+        AsyncTreeWalker.prototype.fill = function (node, generatorAction) {
+            var _this = this;
+            var dfd = $.Deferred();
+            var promises = [];
+            generatorAction(node).done(function () {
+                for (var i in node.children) {
+                    if (node.children.hasOwnProperty(i)) {
+                        promises.push(_this.fill(node.children[i], generatorAction));
+                    }
+                }
+                $.when.apply(null, promises).then(function () {
+                    dfd.resolve();
+                });
+            });
+            return dfd.promise();
+        };
         AsyncTreeWalker.prototype.walk = function (node, action) {
             var promises = [action(node)];
             for (var i in node.children) {
