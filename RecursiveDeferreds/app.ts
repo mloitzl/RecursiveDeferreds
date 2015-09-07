@@ -15,7 +15,7 @@
                     new TreeStructures.TreeNode("level23", [
                         new TreeStructures.TreeNode("level231"),
                         new TreeStructures.TreeNode("level232"),
-                        new TreeStructures.TreeNode("level233"),
+                        new TreeStructures.TreeNode("level233")
                     ])
                 ]),
             new TreeStructures.TreeNode("node3")
@@ -30,6 +30,7 @@
         walker.fill(treeEmpty, (node: TreeStructures.TreeNode<string>) => {
             TreeStructures.DummyDataProvider.instanceCounter++;
             //return TreeStructures.DummyDataProvider.fillNode(node);
+            console.log("Calling generator Action for node: " + node.item + " Source: " + tree.item);
             return TreeStructures.DummyDataProvider.fillNodeFromSource(node, tree);
         }).done((result) => {
             syncWalker.walk(treeEmpty, (node) => console.log(node.item));

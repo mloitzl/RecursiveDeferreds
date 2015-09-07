@@ -11,7 +11,7 @@ $(function () {
             new TreeStructures.TreeNode("level23", [
                 new TreeStructures.TreeNode("level231"),
                 new TreeStructures.TreeNode("level232"),
-                new TreeStructures.TreeNode("level233"),
+                new TreeStructures.TreeNode("level233")
             ])
         ]),
         new TreeStructures.TreeNode("node3")
@@ -22,6 +22,7 @@ $(function () {
     walker.fill(treeEmpty, function (node) {
         TreeStructures.DummyDataProvider.instanceCounter++;
         //return TreeStructures.DummyDataProvider.fillNode(node);
+        console.log("Calling generator Action for node: " + node.item + " Source: " + tree.item);
         return TreeStructures.DummyDataProvider.fillNodeFromSource(node, tree);
     }).done(function (result) {
         syncWalker.walk(treeEmpty, function (node) { return console.log(node.item); });
@@ -69,21 +70,27 @@ var TreeStructures;
             return dfd.promise();
         };
         DummyDataProvider.fillNodeFromSource = function (node, source) {
-            var _this = this;
             var dfd = $.Deferred();
             var promises = [];
+            console.log("Filling: " + node.item);
             window.setTimeout(function () {
                 node.item = source.item;
                 for (var sourceNode in source.children) {
+                    console.log("Creating child: " + source.children[sourceNode].item);
                     var childNode = new TreeStructures.TreeNode(source.children[sourceNode].item);
                     node.addChild(childNode);
-                    promises.push(_this.fillNodeFromSource(childNode, source.children[sourceNode]));
                 }
-                $.when.apply(null, promises).then(function () {
-                    console.log("Resolving: " + node.item);
+                if (promises.length === 0) {
+                    console.log("Resolving final: " + node.item);
                     dfd.resolve(node.item);
-                });
-            }, 500 + Math.random() * 1000);
+                }
+                else {
+                    $.when.apply(null, promises).then(function () {
+                        console.log("Resolving: " + node.item);
+                        dfd.resolve(node.item);
+                    });
+                }
+            }, 0);
             return dfd.promise();
         };
         DummyDataProvider.instanceCounter = 0;
